@@ -1,0 +1,43 @@
+DOD::TokyoTyrant:
+  databases:
+    multi:
+      storage_class: 'RDB'
+      replication: 'multislave'
+      datasources:
+        W:
+          host: 'localhost'
+          port: 101971
+        R:
+          - host: 'localhost'
+            port: 101972
+          - host: 'localhost'
+            port: 101973
+          - host: 'localhost'
+            port: 101974
+          - host: 'localhost'
+            port: 101975
+    dual:
+      storage_class: 'RDBTBL'
+      replication: 'dualmaster'
+      datasources:
+        W:
+          host: 'localhost'
+          port: 101978
+        R:
+          host: 'localhost'
+          port: 101979
+    hash:
+      storage_class: 'RDB'
+      replication: 'no'
+      datasources:
+        RW:
+          host: 'localhost'
+          port: 101980
+    table:
+      storage_class: 'RDBTBL'
+      replication: 'no'
+      datasources:
+        RW:
+          host: 'localhost'
+          port: 101981
+
