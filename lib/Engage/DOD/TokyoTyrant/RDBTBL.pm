@@ -176,6 +176,29 @@ sub delete {
     return !$has_error;
 }
 
+sub update_or_create {
+    my $self = shift;
+
+    unless (@_) {
+        Engage::Exception->throw('Specify the keys to update or create');
+    }
+
+    my $rdb = $self->rdb('W');
+    my @rows;
+    my $has_error = 0;
+
+    @rows = @_;
+    while ( my ($key, $cols) = splice @rows, 0, 2 ) {
+        unless ( defined $rdb->put($key, $cols) ) {
+            my $msg = $rdb->errmsg($rdb->ecode);
+            $self->log->error(qq/update failed: $msg "$key"/);
+            $has_error = 1;
+        }
+    }
+
+    return !$has_error;
+}
+
 1;
 
 __END__
