@@ -23,7 +23,7 @@ sub create {
     while ( my ($key, $val) = splice @rows, 0, 2 ) {
         unless ( $rdb->putkeep($key, $val) ) {
             my $msg = $rdb->errmsg($rdb->ecode);
-            $self->log->warn(qq/create failed: $msg "$key"/);
+            $self->log->error(qq/create failed: $msg "$key"/);
             $has_error = 1;
         }
     }
@@ -52,8 +52,7 @@ sub update {
     my $self = shift;
 
     unless (@_ && !grep ref, @_) {
-        $self->log->error('Specify the keys to update');
-        return 0;
+        Engage::Exception->throw('Specify the keys to update');
     }
 
     my $rdb = $self->rdb('W');

@@ -59,10 +59,12 @@ sub create {
     my $has_error = 0;
 
     while ( my ($key, $cols) = splice @rows, 0, 2 ) {
-        confess 'Columns must be hash reference' unless ref $cols eq 'HASH';
+        unless ( ref $cols eq 'HASH' ) {
+            Engage::Exception->throw('Columns must be hash reference');
+        }
         unless ( $rdb->putkeep($key, $cols) ) {
             my $msg = $rdb->errmsg($rdb->ecode);
-            $self->log->warn(qq/create failed: $msg "$key"/);
+            $self->log->error(qq/create failed: $msg "$key"/);
             $has_error = 1;
         }
     }
@@ -128,8 +130,7 @@ sub update {
     my $self = shift;
 
     unless (@_) {
-        $self->log->error('Specify the keys to update');
-        return 0;
+        Engage::Exception->throw('Specify the keys to update');
     }
 
     my $rdb = $self->rdb('W');
@@ -178,25 +179,3 @@ sub delete {
 1;
 
 __END__
-$qry->QCSTREQ    eq $expr       for string which is equal to the expression, 
-$qry->QCSTRINC   /$expr/        for string which is included in the expression, 
-$qry->QCSTRBW    /^$expr/       for string which begins with the expression, 
-$qry->QCSTREW    /$expr$/       for string which ends with the expression, 
-$qry->QCSTRAND   for string which includes all tokens in the expression, 
-$qry->QCSTROR    for string which includes at least one token in the expression,
-$qry->QCSTROREQ  for string which is equal to at least one token in the expression, 
-$qry->QCSTRRX    for string which matches regular expressions of the expression, 
-$qry->QCNUMEQ    == $expr       for number which is equal to the expression, 
-$qry->QCNUMGT    > $expr        for number which is greater than the expression,
-$qry->QCNUMGE    >= $expr       for number which is greater than or equal to the expression, 
-$qry->QCNUMLT    < $expr        for number which is less than the expression,
-$qry->QCNUMLE    <= $expr       for number which is less than or equal to the expression, 
-$qry->QCNUMBT    for number which is between two tokens of the expression,
-$qry->QCNUMOREQ  for number which is equal to at least one token in the expression, 
-$qry->QCFTSPH    for full-text search with the phrase of the expression, 
-$qry->QCFTSAND   for full-text search with all tokens in the expression, 
-$qry->QCFTSOR    for full-text search with at least one token in the expression, 
-$qry->QCFTSEX    for full-text search with the compound expression. All operations can be flagged by bitwise-or: 
-$qry->QCNEGATE   for negation, 
-$qry->QCNOIDX    for using no index.
-
