@@ -17,8 +17,13 @@ has 'datasources' => (
 
 has 'connections' => (
     is  => 'ro',
-    isa => 'HashRef',
+    isa => 'HashRef[Object]',
     default => sub { {} },
+    metaclass => 'Collection::Hash',
+    provides => {
+        'get' => 'get_connection',
+        'set' => 'set_connection',
+    },
     lazy => 1,
 );
 
@@ -30,16 +35,22 @@ sub rdb {
     my ( $self, $datasource ) = @_;
 
     my $connect_info = $self->_connect_info( $datasource );
+    my $rdb = $self->get_connection($connect_info);
 
-    if ( not defined $self->connections->{$connect_info} ) {
-        my $rdb = $self->storage_class->new;
-        unless ( $rdb->open(split ':', $connect_info) ) {
-            $self->log->error(sprintf '%s %s', $rdb->errmsg($rdb->ecode), $connect_info);
-        }
-        $self->connections->{$connect_info} = $rdb;
+    # first time
+    unless ( defined $rdb ) {
+        $self->log->info(q/The storage is not connected yet.  Trying to connect./);
+        $rdb = $self->set_connection( $connect_info => $self->_connect($connect_info) );
+    }
+    # auto reconnect
+    unless ( $rdb->stat ) {
+        $self->log->info(q/The connection is not available.  Trying to reconnect./);
+        $rdb = $self->set_connection( $connect_info => $self->_connect($connect_info) );
     }
 
+    return $rdb;
     return $self->connections->{$connect_info};
+    return $self->get_connection($connect_info);
 }
 
 sub _connect_info {
@@ -61,6 +72,15 @@ sub _connect_info {
         unless defined $connect_info->{'host'} and length $connect_info->{'port'};
 
     return sprintf '%s:%s', @$connect_info{qw/host port/};
+}
+
+sub _connect {
+    my ( $self, $connect_info ) = @_;
+    my $rdb = $self->storage_class->new;
+    unless ( $rdb->open(split ':', $connect_info) ) {
+        Engage::Exception->throw(sprintf '%s %s', $rdb->errmsg($rdb->ecode), $connect_info)
+    }
+    return $rdb;
 }
 
 1;
