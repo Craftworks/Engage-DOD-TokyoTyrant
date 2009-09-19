@@ -4,13 +4,13 @@ use Moose::Role;
 no Moose::Role;
 
 sub storage {
-    my ( $self, $datasource ) = @_;
-    $self->dod('TokyoTyrant')->storage( $self->data_name, $datasource );
+    my $self = shift;
+    $self->dod('TokyoTyrant')->storage( $self->data_name );
 }
 
-sub create { shift->storage('W')->create( @_ ); } 
-sub read   { shift->storage('R')->read  ( @_ ); } 
-sub update { shift->storage('W')->update( @_ ); } 
-sub delete { shift->storage('W')->delete( @_ ); } 
+sub create { shift->storage->create( @_ ); }
+sub read   { shift->storage->read  ( @_ ); }
+sub update { shift->storage->update( @_ ); }
+sub delete { shift->storage->delete( @_ ); }
 
 1;
