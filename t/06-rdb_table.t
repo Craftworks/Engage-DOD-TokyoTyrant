@@ -1,6 +1,6 @@
 use strict;
 use warnings;
-use Test::More tests => 19;
+use Test::More tests => 21;
 use Test::ttserver;
 
 BEGIN { use_ok 'Engage::DOD::TokyoTyrant' }
@@ -78,8 +78,13 @@ is_deeply( $storage->read(qw/michael janet/), {
 #=============================================================================
 # DELETE
 #=============================================================================
-ok( $storage->delete('bob'), 'delete single key success' );
-ok(!$storage->read('bob'), 'delete and read single key success' );
+ok( $storage->delete('bob'), 'delete single key' );
+ok(!$storage->read('bob'), 'delete and read single key' );
 ok( $storage->delete(qw/michael janet chris/), 'delete multiple keys' );
 ok(!$storage->read(qw/michael janet chris/), 'delete and read multiple keys' );
 
+#=============================================================================
+# update_or_create
+#=============================================================================
+ok( $storage->update_or_create('john', { blood => 'AB', age => 50 }), 'update_or_create single key' );
+is_deeply( $storage->read('john'), { blood => 'AB', age => 50 }, 'update_or_create and read single key' );
