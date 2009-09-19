@@ -1,13 +1,23 @@
 package Engage::DOD::TokyoTyrant;
 
 use Moose;
+use MooseX::AttributeHelpers;
 use TokyoTyrant;
-use Engage::DOD::TokyoTyrant::RDB;
-use Engage::DOD::TokyoTyrant::RDBTBL;
 
 extends 'Engage::DOD';
 
-our $VERSION = '0.01';
+our $VERSION = '0.001';
+
+has 'storage_class' => (
+    is  => 'ro',
+    isa => 'HashRef[Str]',
+    default   => sub { {} },
+    metaclass => 'Collection::Hash',
+    provides  => {
+        'set' => 'set_storage_class',
+        'get' => 'get_storage_class',
+    },
+);
 
 has 'storages' => (
     is  => 'ro',
@@ -22,6 +32,26 @@ __PACKAGE__->meta->make_immutable;
 
 sub BUILD {
     my $self = shift;
+
+    for my $storage (qw/RDB RDBTBL/) {
+        my $class;
+        my $base = __PACKAGE__ . "\::$storage";
+        my $orig = ref($self)  . "\::$storage";
+
+        local $@;
+        if ( eval "require $orig" ) {
+            $class = $orig;
+        }
+        elsif ( eval "require $base" ) {
+            $class = $base;
+        }
+        else {
+            confess $@;
+        }
+
+        Class::MOP::load_class( $class );
+        $self->set_storage_class($storage => $class);
+    }
 }
 
 sub storage {
@@ -33,7 +63,7 @@ sub storage {
     my $config = $self->config->{'databases'}{$database};
     confess qq{Unknown database "$database"} unless defined $config;
 
-    my $storage_class = __PACKAGE__ . '::' . $config->{'storage_class'};
+    my $storage_class = $self->get_storage_class( $config->{'storage_class'} );
     confess qq{Unknown storage "$storage_class"}
         unless Class::MOP::is_class_loaded( $storage_class );
 
