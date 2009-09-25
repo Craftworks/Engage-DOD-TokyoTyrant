@@ -123,7 +123,7 @@ sub search {
     my $rows = +{ map { $_, undef } @keys };
     $rdb->mget($rows);
 
-    return [ map +{ $_ => $rows->{$_} }, @keys ];
+    return @keys ? [ map +{ $_ => $rows->{$_} }, @keys ] : undef;
 }
 
 sub update {
