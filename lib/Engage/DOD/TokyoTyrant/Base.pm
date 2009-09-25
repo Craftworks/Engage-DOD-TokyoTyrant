@@ -49,8 +49,6 @@ sub rdb {
     }
 
     return $rdb;
-    return $self->connections->{$connect_info};
-    return $self->get_connection($connect_info);
 }
 
 sub _connect_info {
