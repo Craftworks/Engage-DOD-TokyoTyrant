@@ -64,11 +64,11 @@ is_deeply( $storage->read(undef, {
 #=============================================================================
 # UPDATE
 #=============================================================================
-ok( $storage->update( 'bob' => { blood => 'A', age => 21 } ), 'update key success' );
-is_deeply( $storage->read('bob'), { blood => 'A', age => 21 }, 'update and read key success' );
+ok( $storage->update( 'bob' => { blood => 'B' } ), 'update key success' );
+is_deeply( $storage->read('bob'), { blood => 'B', age => 20 }, 'update and read key success' );
 ok( $storage->update(
     'michael' => { blood => 'B', age => 32 },
-    'janet'   => { blood => 'O', age => 28 },
+    'janet'   => { age => 28 },
 ), 'update multiple keys success' );
 is_deeply( $storage->read(qw/michael janet/), {
     'michael' => { blood => 'B', age => 32 },
