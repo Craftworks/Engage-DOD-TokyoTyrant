@@ -206,6 +206,16 @@ sub update_or_create {
     return !$has_error;
 }
 
+sub mk_key {
+    my $self = shift;
+
+    if ( (my $id = $self->rdb('W')->genuid) != -1 ) {
+        return $id;
+    }
+
+    Engage::Exception->throw(q/Generate a unique ID number failed: $msg/);
+}
+
 1;
 
 __END__
