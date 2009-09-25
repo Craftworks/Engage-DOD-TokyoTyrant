@@ -136,10 +136,11 @@ sub update {
     my $rdb = $self->rdb('W');
     my @rows;
     my $has_error = 0;
+    my %data;
 
     @rows = @_;
     while ( my ($key) = splice @rows, 0, 2 ) {
-        unless ( defined $rdb->get($key) ) {
+        unless ( defined ($data{$key} = $rdb->get($key)) ) {
             my $msg = $rdb->errmsg($rdb->ecode);
             $self->log->error(qq/update failed: $msg "$key"/);
             $has_error = 1;
@@ -149,6 +150,7 @@ sub update {
 
     @rows = @_;
     while ( my ($key, $cols) = splice @rows, 0, 2 ) {
+        %$cols = ( %{ $data{$key} }, %$cols );
         unless ( defined $rdb->put($key, $cols) ) {
             my $msg = $rdb->errmsg($rdb->ecode);
             $self->log->error(qq/update failed: $msg "$key"/);
