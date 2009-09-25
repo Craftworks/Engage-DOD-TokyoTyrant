@@ -164,6 +164,11 @@ sub update {
 sub delete {
     my $self = shift;
 
+    if ( @_ == 1 && ref $_[0] eq 'HASH' ) {
+        my $rows = $self->search(shift);
+        @_ = map { keys %$_ } @$rows;
+    }
+
     my $rdb = $self->rdb('W');
     my $has_error = 0;
 
