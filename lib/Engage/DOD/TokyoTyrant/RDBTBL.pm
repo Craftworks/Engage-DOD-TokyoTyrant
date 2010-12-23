@@ -1,6 +1,8 @@
 package Engage::DOD::TokyoTyrant::RDBTBL;
 
 use Moose;
+use Encode qw/decode_utf8/;
+use Data::Dumper qw/Dumper/;
 extends 'Engage::DOD::TokyoTyrant::Base';
 with 'Engage::DOD::Role::Driver';
 
@@ -75,6 +77,7 @@ sub create {
 sub read {
     my $self = shift;
 
+    local $Data::Dumper::Terse = 1;
     my $rdb = $self->rdb('R');
 
     # has query conditions
@@ -84,13 +87,18 @@ sub read {
     # single
     elsif ( @_ == 1 ) {
         my $key  = shift;
-        return $rdb->get($key);
+        my $recs = $rdb->get($key);
+        return unless $recs;
+        my $rv = eval decode_utf8(Dumper [ $key => $recs ]);
+        return wantarray ? @$rv : +{ @$rv };
     }
     # multiple
     elsif ( @_ != 1 ) {
         my $recs = +{ map { $_, undef } @_ };
         $rdb->mget($recs);
-        return %$recs ? $recs : undef;
+        return unless %$recs;
+        $recs = eval decode_utf8(Dumper $recs);
+        return wantarray ? %$recs : $recs;
     }
 }
 
@@ -122,8 +130,11 @@ sub search {
     my @keys = @{ $qry->search };
     my $rows = +{ map { $_, undef } @keys };
     $rdb->mget($rows);
+    $rows = eval decode_utf8(Dumper $rows);
 
-    return @keys ? [ map +{ $_ => $rows->{$_} }, @keys ] : undef;
+    return unless @keys;
+    my @rows = map +{ $_ => $rows->{$_} }, @keys;
+    return wantarray ? @rows : \@rows;
 }
 
 sub update {
@@ -181,6 +192,27 @@ sub delete {
     }
 
     return !$has_error;
+}
+
+sub read_or_create {
+    my $self = shift;
+
+    unless (@_) {
+        Engage::Exception->throw('Specify the keys to read or create');
+    }
+
+    my $rdb = $self->rdb('R');
+    my @rows;
+    my $has_error = 0;
+
+    my $recs  = +{ @_ };
+    my $clone = +{ @_ };
+
+    $rdb->mget($recs);
+    my @create = grep { !$recs->{$_} } keys %$clone;
+    my %create = map { $_ => $clone->{$_} } @create;
+
+    $self->create(%create);
 }
 
 sub update_or_create {

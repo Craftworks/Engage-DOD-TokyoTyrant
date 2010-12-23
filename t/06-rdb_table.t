@@ -1,6 +1,6 @@
 use strict;
 use warnings;
-use Test::More tests => 21;
+use Test::More tests => 23;
 use Test::ttserver;
 
 BEGIN { use_ok 'Engage::DOD::TokyoTyrant' }
@@ -24,7 +24,7 @@ my $storage = $dod->storage('table');
 is( $storage->read('bob'), undef, 'key is not exists yet' );
 ok( $storage->create('bob', +{ blood => 'A', age => 20 }), 'create key success' );
 ok(!$storage->create('bob', +{ blood => 'A', age => 20 }), 'create key failed' );
-is_deeply( $storage->read('bob'), +{ blood => 'A', age => 20 }, 'read key success' );
+is_deeply( scalar $storage->read('bob'), +{ blood => 'A', age => 20 }, 'read key success' );
 ok( $storage->create(
     'michael' => { blood => 'B', age => 22 },
     'janet'   => { blood => 'O', age => 18 },
@@ -35,7 +35,7 @@ ok(!$storage->create(
     'janet'   => { blood => 'O', age => 18 },
     'chris'   => { blood => 'A', age => 26 },
 ), 'create multiple keys failed' );
-is_deeply( $storage->read(qw/michael janet chris/), {
+is_deeply( scalar $storage->read(qw/michael janet chris/), +{
     'michael' => { blood => 'B', age => 22 },
     'janet'   => { blood => 'O', age => 18 },
     'chris'   => { blood => 'A', age => 26 },
@@ -44,7 +44,7 @@ is_deeply( $storage->read(qw/michael janet chris/), {
 #=============================================================================
 # Search
 #=============================================================================
-is_deeply( $storage->read({
+is_deeply( scalar $storage->read({
     age => { '>' => 20 },
 }, {
     order => { 'age' => 'NUM_DESC' },
@@ -52,7 +52,7 @@ is_deeply( $storage->read({
     { 'chris'   => { blood => 'A', age => 26 } },
     { 'michael' => { blood => 'B', age => 22 } },
 ], 'search by cond' );
-is_deeply( $storage->read(undef, {
+is_deeply( scalar $storage->read(undef, {
     order => { 'blood' => 'STR_DESC' },
 }), [
     { 'janet'   => { blood => 'O', age => 18 } },
@@ -65,15 +65,29 @@ is_deeply( $storage->read(undef, {
 # UPDATE
 #=============================================================================
 ok( $storage->update( 'bob' => { blood => 'B' } ), 'update key success' );
-is_deeply( $storage->read('bob'), { blood => 'B', age => 20 }, 'update and read key success' );
+is_deeply( scalar $storage->read('bob'), { blood => 'B', age => 20 }, 'update and read key success' );
 ok( $storage->update(
     'michael' => { blood => 'B', age => 32 },
     'janet'   => { age => 28 },
 ), 'update multiple keys success' );
-is_deeply( $storage->read(qw/michael janet/), {
+is_deeply( scalar $storage->read(qw/michael janet/), {
     'michael' => { blood => 'B', age => 32 },
     'janet'   => { blood => 'O', age => 28 },
 }, 'update and read multiple keys success' );
+
+#=============================================================================
+# read_or_create
+#=============================================================================
+ok( $storage->read_or_create(
+    'michael' => { blood => 'B' },
+    'janet'   => { blood => 'O' },
+    'john'    => { blood => 'A', age => 20 },
+), 'read_or_create' );
+is_deeply( scalar $storage->read(qw/michael janet john/), {
+    'michael' => { blood => 'B', age => 32 },
+    'janet'   => { blood => 'O', age => 28 },
+    'john'    => { blood => 'A', age => 20 },
+}, 'read_or_create' );
 
 #=============================================================================
 # DELETE
@@ -87,4 +101,4 @@ ok(!$storage->read(qw/michael janet chris/), 'delete and read multiple keys' );
 # update_or_create
 #=============================================================================
 ok( $storage->update_or_create('john', { blood => 'AB', age => 50 }), 'update_or_create single key' );
-is_deeply( $storage->read('john'), { blood => 'AB', age => 50 }, 'update_or_create and read single key' );
+is_deeply( scalar $storage->read('john'), { blood => 'AB', age => 50 }, 'update_or_create and read single key' );
